@@ -102,9 +102,6 @@ private[finagle] class WebSocketServerHandler extends SimpleChannelUpstreamHandl
       case frame: CloseWebSocketFrame =>
         handshaker.foreach(_.close(ctx.getChannel, frame))
 
-      case frame: PingWebSocketFrame =>
-        ctx.getChannel.write(new PongWebSocketFrame(frame.getBinaryData))
-
       case frame: WebSocketFrame =>
         Channels.fireMessageReceived(ctx, frame)
 

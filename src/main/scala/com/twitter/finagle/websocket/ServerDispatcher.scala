@@ -17,20 +17,17 @@ private[finagle] class ServerDispatcher(
 
   import ServerDispatcher._
 
-  private[this] def messages(): AsyncStream[Any] =
-    AsyncStream.fromFuture(trans.read()) ++ messages()
+  private[this] def messages(): AsyncStream[Frame] =
+    AsyncStream.fromFuture(trans.read().map(fromNetty)) ++ messages()
 
-  private[this] val request = Request(messages.map(fromNetty))
-
-  service(request).flatMap { response =>
+  service(Request(messages)).flatMap { response =>
     response.messages
       .map(toNetty)
       .foreachF(trans.write)
       .ensure(trans.close())
   }
 
-  def close(deadline: Time): Future[Unit] =
-    trans.close()
+  def close(deadline: Time): Future[Unit] = trans.close()
 }
 
 private object ServerDispatcher {
@@ -44,8 +41,14 @@ private object ServerDispatcher {
     case bin: BinaryWebSocketFrame =>
       Binary(new ChannelBufferBuf(bin.getBinaryData))
 
-    // TODO don't do this
-    case _ => throw new Exception("unknown frame")
+    case ping: PingWebSocketFrame =>
+      Ping(new ChannelBufferBuf(ping.getBinaryData))
+
+    case pong: PongWebSocketFrame =>
+      Pong(new ChannelBufferBuf(pong.getBinaryData))
+
+    case frame =>
+      throw new IllegalStateException(s"unknown frame: $frame")
   }
 
   def toNetty(frame: Frame): WebSocketFrame = frame match {
@@ -54,5 +57,11 @@ private object ServerDispatcher {
 
     case Binary(buf) =>
       new BinaryWebSocketFrame(BufChannelBuffer(buf))
+
+    case Ping(buf) =>
+      new PingWebSocketFrame(BufChannelBuffer(buf))
+
+    case Pong(buf) =>
+      new PongWebSocketFrame(BufChannelBuffer(buf))
   }
 }
