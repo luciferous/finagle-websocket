@@ -29,6 +29,7 @@ class EndToEndTest extends FunSuite {
             val binary = Buf.ByteArray.Owned.extract(buf)
             synchronized { binaryResult ++= binary }
             latch.countDown()
+          case _ =>
         }
         Future.value(Response(req.messages))
       }
