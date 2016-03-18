@@ -18,8 +18,6 @@ class ServerDispatcherTest extends FunSuite {
 
   val echo = new Service[Request, Response] {
     def apply(req: Request): Future[Response] = {
-      println("service: got request")
-      req.messages.foreach(println)
       Future.value(Response(req.messages))
     }
   }
