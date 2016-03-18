@@ -13,6 +13,8 @@ import scala.collection.mutable.ArrayBuffer
 
 @RunWith(classOf[JUnitRunner])
 class EndToEndTest extends FunSuite {
+  import Frame._
+
   test("multi client") {
     var result = ""
     val binaryResult = ArrayBuffer.empty[Byte]

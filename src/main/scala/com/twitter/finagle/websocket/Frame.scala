@@ -13,7 +13,10 @@ import com.twitter.io.Buf
  * [1]: https://tools.ietf.org/html/rfc6455
  */
 sealed trait Frame
-case class Text(text: String) extends Frame
-case class Binary(buf: Buf) extends Frame
-case class Ping(buf: Buf) extends Frame
-case class Pong(buf: Buf) extends Frame
+
+object Frame {
+  case class Text(text: String) extends Frame
+  case class Binary(buf: Buf) extends Frame
+  case class Ping(buf: Buf) extends Frame
+  case class Pong(buf: Buf) extends Frame
+}

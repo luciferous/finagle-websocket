@@ -45,6 +45,8 @@ private[finagle] class ServerDispatcher(
 }
 
 private object ServerDispatcher {
+  import Frame._
+
   def fromNetty(m: Any): Frame = m match {
     case text: TextWebSocketFrame =>
       Text(text.getText)
