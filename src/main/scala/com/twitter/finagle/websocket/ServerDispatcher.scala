@@ -26,9 +26,11 @@ private[finagle] class ServerDispatcher(
   // The first item is a HttpRequest.
   trans.read().flatMap {
     case req: HttpRequest =>
+      println("Got HTTP Request")
       val uri = new URI(req.getUri)
       val headers = req.headers.asScala.map(e => e.getKey -> e.getValue).toMap
       service(Request(uri, headers, messages)).flatMap { response =>
+        println("Got HTTP Response")
         response.messages
           .map(toNetty)
           .foreachF(trans.write)

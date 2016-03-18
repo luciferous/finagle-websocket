@@ -8,6 +8,7 @@ import com.twitter.finagle.transport.{QueueTransport, Transport}
 import com.twitter.util.{Await, Future}
 import org.junit.runner.RunWith
 import org.jboss.netty.handler.codec.http._
+import org.jboss.netty.handler.codec.http.websocketx._
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
@@ -15,13 +16,30 @@ import org.scalatest.junit.JUnitRunner
 class ServerDispatcherTest extends FunSuite {
   import ServerDispatcherTest._
 
-  val echo = Service.mk { req: Request => Future.value(Response(req.messages)) }
+  val echo = new Service[Request, Response] {
+    def apply(req: Request): Future[Response] = {
+      println("service: got request")
+      req.messages.foreach(println)
+      Future.value(Response(req.messages))
+    }
+  }
 
   test("invalid message") {
     val (in, out) = mkPair[Any, Any]
     val disp = new ServerDispatcher(out, echo, DefaultStatsReceiver)
     in.write("invalid")
-    Await.ready(out.onClose)
+    Await.ready(out.onClose, 1.second)
+    assert(out.status == Status.Closed)
+  }
+
+  test("valid message then invalid") {
+    val (in, out) = mkPair[Any, Any]
+    val disp = new ServerDispatcher(out, echo, DefaultStatsReceiver)
+    in.write(new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/"))
+    in.write(new TextWebSocketFrame("hello"))
+    val frame = Await.result(in.read(), 1.second)
+    assert(frame.asInstanceOf[TextWebSocketFrame].getText == "hello")
+    in.write("invalid")
     assert(out.status == Status.Closed)
   }
 }
