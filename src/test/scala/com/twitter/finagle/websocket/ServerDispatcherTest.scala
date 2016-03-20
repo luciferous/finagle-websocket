@@ -6,6 +6,7 @@ import com.twitter.finagle.{Service, Status}
 import com.twitter.finagle.stats.DefaultStatsReceiver
 import com.twitter.finagle.transport.{QueueTransport, Transport}
 import com.twitter.util.{Await, Future}
+import java.net.SocketAddress
 import org.junit.runner.RunWith
 import org.jboss.netty.handler.codec.http._
 import org.jboss.netty.handler.codec.http.websocketx._
@@ -33,7 +34,9 @@ class ServerDispatcherTest extends FunSuite {
   test("valid message then invalid") {
     val (in, out) = mkPair[Any, Any]
     val disp = new ServerDispatcher(out, echo, DefaultStatsReceiver)
-    in.write(new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/"))
+    val req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/")
+    val addr = new SocketAddress{}
+    in.write((req, addr))
     in.write(new TextWebSocketFrame("hello"))
     val frame = Await.result(in.read(), 1.second)
     assert(frame.asInstanceOf[TextWebSocketFrame].getText == "hello")

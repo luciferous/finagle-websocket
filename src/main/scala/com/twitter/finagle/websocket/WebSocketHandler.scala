@@ -97,7 +97,8 @@ private[finagle] class WebSocketServerHandler extends SimpleChannelUpstreamHandl
             wsFactory.sendUnsupportedWebSocketVersionResponse(ctx.getChannel)
           case Some(ref) =>
             ref.handshake(ctx.getChannel, req)
-            Channels.fireMessageReceived(ctx, req)
+            val addr = ctx.getChannel.getRemoteAddress
+            Channels.fireMessageReceived(ctx, (req, addr))
         }
 
       case frame: CloseWebSocketFrame =>

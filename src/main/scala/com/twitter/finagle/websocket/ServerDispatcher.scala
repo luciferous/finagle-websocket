@@ -7,7 +7,7 @@ import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.transport.Transport
 import com.twitter.io.Buf
 import com.twitter.util.{Closable, Future, Time}
-import java.net.URI
+import java.net.{SocketAddress, URI}
 import org.jboss.netty.handler.codec.http.HttpRequest
 import org.jboss.netty.handler.codec.http.websocketx._
 import scala.collection.JavaConverters._
@@ -25,10 +25,10 @@ private[finagle] class ServerDispatcher(
 
   // The first item is a HttpRequest.
   trans.read().flatMap {
-    case req: HttpRequest =>
+    case (req: HttpRequest, addr: SocketAddress) =>
       val uri = new URI(req.getUri)
       val headers = req.headers.asScala.map(e => e.getKey -> e.getValue).toMap
-      service(Request(uri, headers, messages)).flatMap { response =>
+      service(Request(uri, headers, addr, messages)).flatMap { response =>
         response.messages
           .map(toNetty)
           .foreachF(trans.write)
